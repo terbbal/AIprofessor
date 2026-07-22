@@ -3,12 +3,17 @@
 슬라이드 기반으로 살아있는 강의를 하고, QnA 튜터로 답하는 AI 교수.
 ([기획서](../AI교수_기획.md) · [3주 개발계획](../AI교수_개발계획.md))
 
-## 지금까지 구현된 것 (Week 1~2 핵심)
+> 📖 프로젝트 전체 소개는 [루트 README](../README.md) 를 참고하세요. 이 문서는 앱 개발용 요약입니다.
 
-- ✅ 슬라이드 학습 화면: 넘기면 오른쪽에서 설명이 **타이핑 스트리밍**으로 나타남
-- ✅ QnA 튜터: 슬라이드 맥락(현재+앞 슬라이드)을 알고 실시간 답변 (소크라테스식 유도)
-- ✅ 교수 페르소나 3종 선택 (친근한 선배 / 엄격한 노교수 / 다정한 격려형)
+## 지금까지 구현된 것
+
+- ✅ 데모 로그인 + 역할 가드 (학생 / 교수)
+- ✅ 학생 홈: 업로드 자료 기반 **챕터 선택** 화면 (파일명 순 정렬)
+- ✅ 학습 화면: 왼쪽 **실제 슬라이드(PDF)** + 오른쪽 AI 교수 **타이핑 스트리밍** 설명
+- ✅ QnA 튜터: 슬라이드 맥락을 알고 실시간 답변 (소크라테스식 유도)
+- ✅ 교수 페르소나 3종 (친근한 선배 / 엄격한 노교수 / 다정한 격려형)
 - ✅ 진도바 + "이해했어요 / 아직 이해 안 돼요" 버튼
+- ✅ 교수 자료 업로드 (원본 파일명 보존)
 - ✅ **사실/전달 분리**: 뼈대 노트(`data/chapters.ts`)가 사실 고정, 페르소나가 말투만 입힘
 - ✅ 비용 전략: 프롬프트 캐싱(`cache_control`) + 작업별 모델 분리(Haiku/Sonnet)
 - ✅ **API 키 없이도 데모 동작** (목업 스트리밍 폴백)
@@ -25,18 +30,25 @@ npm run dev                        # http://localhost:3000
 
 ```
 app/
-  page.tsx                 # 랜딩 (챕터 목록 + 페르소나 소개)
-  learn/[chapter]/page.tsx # 슬라이드 학습 화면
+  page.tsx                      # → /login 리다이렉트
+  login/page.tsx                # 데모 로그인 (역할 선택)
+  student/
+    page.tsx                    # 학생 홈: 챕터 선택
+    learn/[chapter]/page.tsx    # 학습: 실제 슬라이드(PDF iframe) + AI 교수 타이핑
+  professor/                    # 교수: 홈 / upload / preview
   api/
-    explain/route.ts       # 슬라이드 설명 (Haiku, 스트리밍)
-    qna/route.ts           # 질문 답변 (Sonnet, 스트리밍)
-components/                # SlideViewer / ProfessorChat / PersonaPicker / ProgressBar
+    explain/route.ts            # 슬라이드 설명 (Haiku, 스트리밍)
+    qna/route.ts                # 질문 답변 (Sonnet, 스트리밍)
+    upload/route.ts             # 자료 업로드 (원본 파일명 보존)
+components/                     # SlideViewer · ProfessorChat · PersonaPicker · ProgressBar · RoleGuard · PdfLearn …
 lib/
-  anthropic.ts             # 클라이언트 + 시스템 프롬프트 (서버 전용)
-  personas.ts              # 페르소나 정의
-  stream.ts                # 스트리밍 + 목업 폴백
+  anthropic.ts                  # 클라이언트 + 시스템 프롬프트 (서버 전용)
+  auth.ts                       # 데모 로그인 세션 (localStorage)
+  personas.ts                   # 페르소나 정의
+  stream.ts                     # 스트리밍 + 목업 폴백
   types.ts
-data/chapters.ts           # 슬라이드 뼈대 노트 (사실 고정 레이어)
+data/chapters.ts                # 슬라이드 뼈대 노트 (사실 고정 레이어) + pdfUrl
+public/uploads/                 # 업로드된 수업 자료 (예: lec0.pdf)
 ```
 
 ## 모델 전략 (`lib/anthropic.ts`)
