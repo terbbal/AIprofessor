@@ -8,6 +8,8 @@ export const runtime = "nodejs";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const MANIFEST = path.join(UPLOAD_DIR, "manifest.json");
+// repo 루트의 "수업자료" 폴더에도 업로드 원본을 보관한다. (앱은 ai-professor/ 에서 실행 → 상위가 repo 루트)
+const MATERIALS_DIR = path.join(process.cwd(), "..", "수업자료");
 
 // 업로드된 PDF를 챕터로 변환하는 스크립트를 실행한다. (무거운 pdfjs/pdf-lib를 Next 번들과 분리)
 function processPdf(pdfPath: string, id: string, title: string): Promise<void> {
@@ -106,12 +108,19 @@ export async function POST(req: Request) {
   // 이미지 여러 장이면 파일명 순으로 정렬해 슬라이드 순서를 안정적으로
   const ordered = [...files].sort((a, b) => a.name.localeCompare(b.name));
 
+  // 수업자료 보관 폴더 준비 (없으면 생성)
+  await fs.mkdir(MATERIALS_DIR, { recursive: true }).catch(() => {});
+
   const items: string[] = [];
   for (let i = 0; i < ordered.length; i++) {
     const f = ordered[i];
     const buf = Buffer.from(await f.arrayBuffer());
     const name = safeName(f.name, i);
     await fs.writeFile(path.join(UPLOAD_DIR, name), buf);
+    // 수업자료 폴더에도 사본 보관 (실패해도 업로드 자체는 계속)
+    await fs
+      .writeFile(path.join(MATERIALS_DIR, name), buf)
+      .catch((e) => console.error("[upload] 수업자료 보관 실패:", e));
     items.push(`/uploads/${name}`);
   }
 
