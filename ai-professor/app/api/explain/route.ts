@@ -1,7 +1,7 @@
 import { getClient, buildTeachingSystem, MODELS } from "@/lib/anthropic";
 import { anthropicTextStream, mockTextStream } from "@/lib/stream";
 import { getPersona } from "@/lib/personas";
-import { getChapter } from "@/data/chapters";
+import { getChapterById } from "@/lib/chapterStore";
 
 // 슬라이드 기본 설명 (Haiku, 스트리밍). 서버 전용.
 export const runtime = "nodejs";
@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const { chapter, slide, personaId } = await req.json();
 
-  const ch = getChapter(Number(chapter));
+  const ch = await getChapterById(String(chapter));
   const note = ch?.slides.find((s) => s.slide === Number(slide));
   if (!note) {
     return new Response("슬라이드를 찾을 수 없습니다.", { status: 404 });

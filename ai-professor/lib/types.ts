@@ -2,7 +2,7 @@
 
 /** 슬라이드의 "뼈대 노트" — 사실 고정 레이어. AI는 이걸 벗어난 개념을 지어내지 못한다. */
 export interface SlideNote {
-  chapter: number;
+  chapter?: number;
   slide: number;
   title: string;
   /** 슬라이드에 표시할 핵심 내용(텍스트/수식). 이미지 대신 텍스트로 명시해 멀티모달 의존 최소화. */
@@ -16,9 +16,12 @@ export interface SlideNote {
 }
 
 export interface Chapter {
-  chapter: number;
+  /** 라우팅·식별용 슬러그 (예: "lec0", "cfg"). 업로드 챕터는 파일명에서 생성. */
+  id: string;
   title: string;
   slides: SlideNote[];
+  /** (표시용) 챕터 번호. 없어도 됨. */
+  chapter?: number;
   /** 업로드된 원본 자료(PDF) 경로. 있으면 학습 화면 왼쪽에 실제 슬라이드를 그대로 띄운다.
    *  슬라이드 번호(slide) = PDF 페이지 번호로 매핑한다. */
   pdfUrl?: string;

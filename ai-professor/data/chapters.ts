@@ -3,6 +3,7 @@ import { Chapter } from "@/lib/types";
 // 업로드된 수업 자료(교수 PDF)를 슬라이드별 "뼈대 노트"로 변환한 챕터.
 // 원본: public/uploads/lec0(1).pdf (CSE307 Programming Languages, Lecture 0)
 const lec0: Chapter = {
+  id: "lec0",
   chapter: 0,
   title: "Lecture 0 · 강의 개요 (Course Overview)",
   pdfUrl: "/uploads/lec0.pdf",
@@ -171,6 +172,7 @@ const lec0: Chapter = {
 // 실제 배포 시 이 데이터를 Supabase `slides` 테이블에 적재한다.
 
 const ch3: Chapter = {
+  id: "cfg",
   chapter: 3,
   title: "문맥자유문법 (Context-Free Grammar)",
   slides: [
@@ -268,18 +270,10 @@ const ch3: Chapter = {
   ],
 };
 
-export const chapters: Record<number, Chapter> = {
-  0: lec0,
-  3: ch3,
-};
+// 코드에 내장된(hand-authored) 정적 챕터들. 업로드 챕터는 chapters.json 에서 별도로 병합된다.
+// (병합·조회는 서버 전용 lib/chapterStore.ts 가 담당)
+export const staticChapters: Chapter[] = [lec0, ch3];
 
-export function getChapter(n: number): Chapter | undefined {
-  return chapters[n];
-}
-
-// 학생 홈의 챕터 선택 목록. 챕터명(= 업로드한 수업 자료 파일명) 기준으로 정렬한다.
-export function getAllChapters(): Chapter[] {
-  return Object.values(chapters).sort((a, b) =>
-    a.title.localeCompare(b.title, "ko"),
-  );
+export function getStaticChapterById(id: string): Chapter | undefined {
+  return staticChapters.find((c) => c.id === id);
 }

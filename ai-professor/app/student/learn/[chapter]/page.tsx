@@ -2,29 +2,50 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { getChapter } from "@/data/chapters";
 import { personas } from "@/lib/personas";
 import ProgressBar from "@/components/ProgressBar";
 import SlideViewer from "@/components/SlideViewer";
 import ProfessorChat from "@/components/ProfessorChat";
 import PersonaPicker from "@/components/PersonaPicker";
 
+interface SlideLite {
+  slide: number;
+  title: string;
+  body?: string;
+  chapter?: number;
+}
+interface ChapterData {
+  id: string;
+  title: string;
+  slidesDir?: string;
+  pdfUrl?: string;
+  slides: SlideLite[];
+}
+
 export default function LearnPage({
   params,
 }: {
   params: { chapter: string };
 }) {
-  const chapterNo = Number(params.chapter);
-  const chapter = getChapter(chapterNo);
+  const chapterId = decodeURIComponent(params.chapter);
 
+  const [chapter, setChapter] = useState<ChapterData | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [idx, setIdx] = useState(0); // 0-based 슬라이드 인덱스
   const [personaId, setPersonaId] = useState(personas[0].id);
   // slide_no -> understood(true/false). MVP는 로컬 상태 (2주차에 Supabase 연결)
   const [progress, setProgress] = useState<Record<number, boolean>>({});
 
+  useEffect(() => {
+    fetch(`/api/chapters/${encodeURIComponent(chapterId)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: ChapterData) => setChapter(data))
+      .catch(() => setNotFound(true));
+  }, [chapterId]);
+
   const total = chapter?.slides.length ?? 0;
 
-  // 슬라이드가 바뀌면 왼쪽 PDF와 오른쪽 챗봇 설명이 함께 넘어간다.
+  // 슬라이드가 바뀌면 왼쪽 슬라이드와 오른쪽 챗봇 설명이 함께 넘어간다.
   const goPrev = useCallback(() => setIdx((i) => Math.max(0, i - 1)), []);
   const goNext = useCallback(
     () => setIdx((i) => Math.min(total - 1, i + 1)),
@@ -53,11 +74,11 @@ export default function LearnPage({
     return () => window.removeEventListener("keydown", onKey);
   }, [goPrev, goNext]);
 
-  if (!chapter) {
+  if (notFound) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-zinc-500">
-          챕터 {params.chapter} 자료가 아직 없습니다.{" "}
+          챕터 자료가 아직 없습니다.{" "}
           <Link
             href="/student"
             className="text-zinc-900 underline underline-offset-2"
@@ -65,6 +86,14 @@ export default function LearnPage({
             홈으로
           </Link>
         </p>
+      </div>
+    );
+  }
+
+  if (!chapter) {
+    return (
+      <div className="flex h-screen items-center justify-center text-sm text-zinc-400">
+        불러오는 중…
       </div>
     );
   }
@@ -91,7 +120,7 @@ export default function LearnPage({
       <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-2">
         <div className="relative hidden overflow-hidden border-r border-zinc-200 bg-zinc-100 md:block">
           {chapter.slidesDir ? (
-            // 페이지별 1장짜리 PDF → 현재 슬라이드 "한 장만" 표시 (다른 슬라이드로 스크롤 불가).
+            // 페이지별 1장짜리 PDF → 현재 슬라이드 "한 장만" 표시.
             <iframe
               key={note.slide}
               src={`${chapter.slidesDir}/p${note.slide}.pdf#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
@@ -99,7 +128,6 @@ export default function LearnPage({
               className="h-full w-full border-0"
             />
           ) : chapter.pdfUrl ? (
-            // 분할본이 없으면 통 PDF에서 해당 페이지로 이동 (다른 페이지도 스크롤 가능).
             <iframe
               key={note.slide}
               src={`${chapter.pdfUrl}#page=${note.slide}&toolbar=0&navpanes=0&view=FitH`}
@@ -107,25 +135,33 @@ export default function LearnPage({
               className="h-full w-full border-0"
             />
           ) : (
-            <SlideViewer note={note} />
+            <SlideViewer
+              note={{
+                slide: note.slide,
+                title: note.title,
+                body: note.body ?? "",
+                key_facts: [],
+                chapter: note.chapter,
+              }}
+            />
           )}
 
-          {/* ◀ 이전 슬라이드 (왼쪽 가장자리 오버레이) */}
+          {/* ◀ 이전 슬라이드 */}
           <button
             onClick={goPrev}
             disabled={isFirst}
             aria-label="이전 슬라이드"
-            className="group absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/90 text-zinc-700 shadow-sm backdrop-blur transition hover:bg-white hover:text-zinc-900 disabled:pointer-events-none disabled:opacity-0"
+            className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/90 text-zinc-700 shadow-sm backdrop-blur transition hover:bg-white hover:text-zinc-900 disabled:pointer-events-none disabled:opacity-0"
           >
             <span className="text-lg leading-none">‹</span>
           </button>
 
-          {/* 다음 슬라이드 ▶ (오른쪽 가장자리 오버레이) */}
+          {/* 다음 슬라이드 ▶ */}
           <button
             onClick={goNext}
             disabled={isLast}
             aria-label="다음 슬라이드"
-            className="group absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/90 text-zinc-700 shadow-sm backdrop-blur transition hover:bg-white hover:text-zinc-900 disabled:pointer-events-none disabled:opacity-0"
+            className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/90 text-zinc-700 shadow-sm backdrop-blur transition hover:bg-white hover:text-zinc-900 disabled:pointer-events-none disabled:opacity-0"
           >
             <span className="text-lg leading-none">›</span>
           </button>
@@ -137,8 +173,8 @@ export default function LearnPage({
         </div>
 
         <ProfessorChat
-          key={`${chapterNo}-${note.slide}`}
-          chapter={chapterNo}
+          key={`${chapter.id}-${note.slide}`}
+          chapter={chapter.id}
           slide={note.slide}
           personaId={personaId}
         />

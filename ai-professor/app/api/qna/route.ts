@@ -1,7 +1,7 @@
 import { getClient, MODELS } from "@/lib/anthropic";
 import { anthropicTextStream, mockTextStream } from "@/lib/stream";
 import { getPersona } from "@/lib/personas";
-import { getChapter } from "@/data/chapters";
+import { getChapterById } from "@/lib/chapterStore";
 
 // QnA 튜터 (Sonnet, 스트리밍). 현재 슬라이드 + 앞 슬라이드 맥락 포함. 서버 전용.
 export const runtime = "nodejs";
@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const { chapter, slide, personaId, question } = await req.json();
 
-  const ch = getChapter(Number(chapter));
+  const ch = await getChapterById(String(chapter));
   if (!ch || !question) {
     return new Response("잘못된 요청입니다.", { status: 400 });
   }

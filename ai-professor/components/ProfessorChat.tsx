@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 interface Props {
-  chapter: number;
+  chapter: string; // 챕터 id
   slide: number;
   personaId: string;
 }
