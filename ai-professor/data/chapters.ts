@@ -6,6 +6,7 @@ const lec0: Chapter = {
   chapter: 0,
   title: "Lecture 0 · 강의 개요 (Course Overview)",
   pdfUrl: "/uploads/lec0.pdf",
+  slidesDir: "/uploads/lec0",
   slides: [
     {
       chapter: 0,

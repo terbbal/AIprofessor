@@ -10,7 +10,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProgressBar from "@/components/ProgressBar";
-import PdfLearn from "@/components/PdfLearn";
 
 interface Manifest {
   kind: "images" | "pdf";
@@ -76,14 +75,37 @@ export default function UploadedViewer({
     );
   }
 
-  // PDF: 왼쪽에 페이지 한 장씩 + 오른쪽에 설명 챗봇
+  // PDF: 브라우저 내장 뷰어(iframe)로 그대로 표시. (터널·개발환경에서도 안정적으로 렌더됨)
   if (manifest.kind === "pdf") {
     return (
-      <PdfLearn
-        url={manifest.items[0]}
-        homeHref={homeHref}
-        reuploadHref={reuploadHref}
-      />
+      <div className="flex h-screen flex-col bg-white">
+        <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-5 py-3.5 text-sm">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href={homeHref}
+              className="shrink-0 text-zinc-400 transition-colors hover:text-zinc-900"
+            >
+              ‹ 홈
+            </Link>
+            <span className="truncate font-medium text-zinc-900">
+              업로드한 수업 자료
+            </span>
+          </div>
+          {reuploadHref && (
+            <Link
+              href={reuploadHref}
+              className="shrink-0 text-zinc-400 transition-colors hover:text-zinc-900"
+            >
+              다시 올리기 →
+            </Link>
+          )}
+        </div>
+        <iframe
+          src={`${manifest.items[0]}#view=FitH`}
+          title="업로드한 수업 자료"
+          className="w-full flex-1 border-0 bg-zinc-100"
+        />
+      </div>
     );
   }
 
